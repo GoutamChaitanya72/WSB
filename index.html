@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Analysis</title>
+</head>
+<body>
+    <h1>Stock Analysis</h1>
+    {% for result in results %}
+        <h2>{{ result.ticker }}</h2>
+        <p>Close Price: {{ result.close_price }}</p>
+        <p>20-Day SMA: {{ result.sma_20 }}</p>
+        <p>50-Day SMA: {{ result.sma_50 }}</p>
+        <p>RSI: {{ result.rsi }}</p>
+        <p>MACD: {{ result.macd }}</p>
+        <p>MACD Signal: {{ result.macd_signal }}</p>
+        <p>Support 1: {{ result.support_1 }}</p>
+        <p>Resistance 1: {{ result.resistance_1 }}</p>
+        <p>Recommendation: <strong>{{ result.recommendation }}</strong></p>
+    {% endfor %}
+</body>
+</html>

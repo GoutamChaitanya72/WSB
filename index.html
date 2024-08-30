@@ -4,106 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Analysis</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        .result {
-            margin-top: 20px;
-        }
-        .loading {
-            display: none;
-            font-style: italic;
-        }
-    </style>
 </head>
 <body>
     <h1>Stock Analysis</h1>
     <form id="tickerForm">
         <label for="tickers">Enter tickers (comma separated):</label>
-        <input type="text" id="tickers" name="tickers" required>
+        <input type="text" id="tickers" name="tickers">
         <button type="submit">Get Analysis</button>
     </form>
+    <div id="loading" style="display: none;">Loading...</div>
+    <div id="results"></div>
 
-    <div id="loading" class="loading">Loading...</div>
-    <div id="results" class="result"></div>
-
-    <!-- Pyodide script for running Python in the browser -->
     <script src="https://cdn.jsdelivr.net/pyodide/v0.22.1/full/pyodide.js"></script>
-
-    <script>
-        document.getElementById('tickerForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const tickers = document.getElementById('tickers').value.split(',').map(ticker => ticker.trim().toUpperCase());
-            const resultsDiv = document.getElementById('results');
-            const loadingDiv = document.getElementById('loading');
-
-            resultsDiv.innerHTML = '';
-            loadingDiv.style.display = 'block';
-
-            // Load Pyodide and necessary packages
-            let pyodide = await loadPyodide();
-            await pyodide.loadPackage("pandas");
-            await pyodide.loadPackage("micropip");
-            await pyodide.runPythonAsync(`
-                import micropip
-                await micropip.install('yfinance')
-                import yfinance as yf
-                import pandas as pd
-            `);
-
-            // Iterate over tickers and fetch data using yfinance
-            for (const ticker of tickers) {
-                let result = await pyodide.runPythonAsync(`
-                    ticker = "${ticker}"
-                    stock = yf.Ticker(ticker)
-                    data = stock.history(period='1y')
-
-                    # Add technical indicators
-                    sma_20 = data['Close'].rolling(window=20).mean().iloc[-1]
-                    sma_50 = data['Close'].rolling(window=50).mean().iloc[-1]
-                    rsi = (data['Close'].diff().apply(lambda x: max(x, 0)).mean() / data['Close'].diff().apply(lambda x: abs(x)).mean()) * 100
-                    macd = data['Close'].ewm(span=12, adjust=False).mean().iloc[-1] - data['Close'].ewm(span=26, adjust=False).mean().iloc[-1]
-                    macd_signal = macd - (data['Close'].ewm(span=9, adjust=False).mean().iloc[-1])
-
-                    # Calculate support and resistance
-                    pivot = (data['High'] + data['Low'] + data['Close']) / 3
-                    support_1 = (2 * pivot) - data['High'].iloc[-1]
-                    resistance_1 = (2 * pivot) - data['Low'].iloc[-1]
-
-                    # Compile results
-                    result = {
-                        "ticker": ticker,
-                        "close_price": data['Close'].iloc[-1],
-                        "sma_20": sma_20,
-                        "sma_50": sma_50,
-                        "rsi": rsi,
-                        "macd": macd,
-                        "macd_signal": macd_signal,
-                        "support_1": support_1.iloc[-1],
-                        "resistance_1": resistance_1.iloc[-1]
-                    }
-                    result
-                `);
-
-                // Convert result from Python to JavaScript object
-                let parsedResult = JSON.parse(result);
-
-                // Display results
-                resultsDiv.innerHTML += `
-                    <h2>${parsedResult.ticker}</h2>
-                    <p>Close Price: ${parsedResult.close_price}</p>
-                    <p>20-Day SMA: ${parsedResult.sma_20}</p>
-                    <p>50-Day SMA: ${parsedResult.sma_50}</p>
-                    <p>RSI: ${parsedResult.rsi}</p>
-                    <p>MACD: ${parsedResult.macd}</p>
-                    <p>MACD Signal: ${parsedResult.macd_signal}</p>
-                    <p>Support 1: ${parsedResult.support_1}</p>
-                    <p>Resistance 1: ${parsedResult.resistance_1}</p>
-                `;
-            }
-            loadingDiv.style.display = 'none';
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
